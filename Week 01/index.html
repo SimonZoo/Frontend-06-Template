@@ -27,11 +27,11 @@
         // three status
         let pattern = [
             [0, 0, 0],
-            [0, 0, 0],
+            [0, 1, 0],
             [0, 0, 0]
         ]
 
-        let color = 1
+        let color = 2
         
         function show() {
             let board = document.getElementById("board")
@@ -51,6 +51,7 @@
             }
         }
 
+        // user move
         function move(i, j) {
             if ( pattern[i][j] === 0) {
                 pattern[i][j] = color
@@ -62,10 +63,25 @@
 
                 show()
 
-                if (willWin(pattern, color)) {
-                    console.log(color === 1 ? "⭕️ will winner" : "❌ will winner")
-                }
+                // if (willWin(pattern, color)) {
+                //     console.log(color === 1 ? "⭕️ will winner" : "❌ will winner")
+                // }
+                computerMove()
             }
+        }
+
+        function computerMove() {
+            let choice = bestChose(pattern, color)
+
+            if (choice.point) {
+                pattern[choice.point[0]][choice.point[1]] = color
+            }
+
+            if (check(pattern, color)) {
+                console.log(color === 1 ? "⭕️  winner" : "❌  winner")
+            }
+            color = 3 - color
+            show()
         }
 
         function clone(pattern) {
@@ -140,11 +156,64 @@
                     let tmp = clone(pattern)
                     tmp[i][j] = color
                     if (check(tmp, color)) {
-                        return true
+                        // return true
+                        // 将要赢的时候，返回会赢的那个位置
+                        return [i,j]
                     }
                 }
             }
-            return false
+            return null
+        }
+
+        /**
+        * 策略：
+        * 1. 赢
+        * 2. 别输
+        * 3. 不管对方怎么走，我都不会输
+        * 己方最好的策略，是对方最差的策略
+        * 
+        * return:
+        * point: 位置
+        * result: 1 赢，0 平手，-1 输
+        */
+
+        function bestChose(pattern, color) {
+            let p
+            if (p = willWin(pattern, color)) {
+                return {
+                    point: p,
+                    result: 1
+                }
+            }
+
+            let result = -2
+            let point = null
+
+            outer:for(let i = 0; i < 3; i++) {
+                for(let j = 0; j < 3; j++) {
+                    if (pattern[i][j]) {
+                        continue
+                    }
+
+                    let tmp = clone(pattern)
+                    tmp[i][j] = color
+
+                    // 己方下完之后，找对方最差的策略
+                    let r = bestChose(tmp, 3 - color).result
+
+                    if (-r > result) {
+                        result = -r
+                        point = [i, j]
+                    }
+                    if (result === 1) {
+                        break outer
+                    }
+                }
+            }
+            return {
+                point: point,
+                result: point ? result : 0
+            }
         }
 
         show()
