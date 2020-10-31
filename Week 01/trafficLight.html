@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic light</title>
+</head>
+<style>
+    #light {
+        width: 100px;
+        height: 100px;
+    }
+</style>
+<body>
+    <div id="light"></div>
+    <script>
+        function trafficLightA() {
+            const start = 1
+            setInterval(function() {
+                let light = document.getElementById("light")
+                let num = light.innerText
+                light.innerText = ""
+                light.innerText = num ? Number(num) + 1 : start
+
+                let t = Number(num) + 1
+                if (t <= 10) {
+                    light.style.background = "green"
+                } else if (t <= 12) {
+                    light.style.background = "yellow"
+                } else if (t <= 17){
+                    light.style.background = "red"
+                    if (t === 17) {
+                        light.innerText = ""
+                    }
+                } 
+            }, 1000)
+        }
+        trafficLightA()
+        // 自己先实现的一个版本
+    </script>
+</body>
+</html>
