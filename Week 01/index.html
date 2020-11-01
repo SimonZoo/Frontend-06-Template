@@ -27,7 +27,7 @@
         // three status
         let pattern = [
             [0, 0, 0],
-            [0, 1, 0],
+            [0, 0, 0],
             [0, 0, 0]
         ]
 
@@ -178,6 +178,8 @@
         */
 
         function bestChose(pattern, color) {
+            // 最开始传入的color，是机器执子
+            // 终止条件，找到了一个会赢的点
             let p
             if (p = willWin(pattern, color)) {
                 return {
@@ -198,9 +200,11 @@
                     let tmp = clone(pattern)
                     tmp[i][j] = color
 
-                    // 己方下完之后，找对方最差的策略
+                    // r是对方策略
                     let r = bestChose(tmp, 3 - color).result
 
+                    // r 是对方的策略， -r 是己方的策略
+                    // 找己方的最好最略，对方的最差策略
                     if (-r > result) {
                         result = -r
                         point = [i, j]
@@ -210,6 +214,8 @@
                     }
                 }
             }
+
+            // 找不到赢的点，终止条件
             return {
                 point: point,
                 result: point ? result : 0
