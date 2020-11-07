@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map</title>
+</head>
+<style>
+    .cell {
+        display: inline-block;
+        line-height: 7px;
+        width: 6px;
+        height: 6px;
+        background-color: gray;
+        border-bottom: 1px solid white;
+        border-right: 1px solid white;
+        vertical-align: top;
+    }
+
+    #container {
+        width: 810px;
+        font-size: 0;
+    }
+
+</style>
+<body>
+    <div id="container"></div>
+    <button onclick="localStorage['map'] = JSON.stringify(map)">save</button>
+    <script>
+        // 地图位置，0可走，1为墙，不可走
+        let map = localStorage["map"] ? JSON.parse(localStorage["map"]) : Array(10000).fill(0)
+        let container = document.getElementById("container")
+
+        for(let y = 0; y < 100; y++) {
+            for(let x = 0; x < 100; x++) {
+                let cell = document.createElement("div")
+
+                cell.classList.add("cell")
+                if (map[100*y + x] == 1) {
+                    cell.style.backgroundColor = "black"
+                }
+                // 拖动鼠标时生成墙，因为考虑大100*100的地图一个个操作太麻烦
+                cell.addEventListener("mousemove", () => {
+                    if (mousedown) {
+                        if (clear) {
+                            cell.style.backgroundColor = "gray"
+                            map[100*y + x] = 0
+                        } else {
+                            cell.style.backgroundColor = "black"
+                            map[100*y + x] = 1
+                        }
+                    }
+                })
+                container.appendChild(cell)
+            }
+        }
+        let mousedown = false
+        let clear = false
+
+        document.addEventListener("mousedown", e => {
+            mousedown = true
+            clear = (e.which === 3)
+            
+            // 左键1，中间键2，右键3
+            // 这里的逻辑是左键的去制造墙，右键清除墙
+        })
+
+        document.addEventListener("mouseup", () => mousedown = false)
+        document.addEventListener("contextmenu", e => e.preventDefault())
+    </script>
+</body>
+</html>
