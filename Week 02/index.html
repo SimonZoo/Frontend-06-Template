@@ -74,43 +74,63 @@
             })
         }
 
-        async function path (map, start, end) {
+        async function findPath (map, start, end) {
             // js 数组作为天然队列，因为 shift/unshift/push/pop 可以轻松满足队列的先进先出FIFO
             // 数组作为堆栈同理
             // 存放周围的可以走的点的集合，因为是广度优先搜索，所以放的是周围的点
-            let quene = [start];
+            let quene = [start]
+            let table = Object.create(map)
 
-            async function insert(x, y) {
+            async function insert(x, y, pre) {
                 if (x < 0 || x >= 100 || y < 0 || y >= 100) {
-                    return;
+                    return
                 }
-                if (map[100 * y + x]) {
-                    return; 
+                if (table[100 * y + x]) {
+                    return
                 }
 
-                await sleep(30)
+                await sleep(3)
                 container.children[y * 100 + x].style.backgroundColor = "lightgreen"
-                // 已经走过的点
+                // 标记已经走过的点
                 map[y * 100 + x] = 2
+                // 纪录该点的前一个点的位置，之后找路径用
+                table[y * 100 + x] = pre
                 quene.push([x,y])
             }
 
             while(quene.length) {
                 // FIFO，取出第一个点
-                let [x, y] = quene.shift();
-                console.log(x,y)
+                let [x, y] = quene.shift()
 
                 if (x === end[0] && y === end[1]) {
-                    return true
+                    // 找到点之后返回路径
+                    // 从终点往回找，直到起点为止
+                    let path = []
+
+                    while(x != start[0] || y != start[1]) {
+                        path.push(map[y * 100 + x]); // 纪录 map[y * 100 + x] 有什么用,纪录[x,y]比较好吧？
+                        [x,y] = table[y * 100 + x];
+
+                        sleep(30)
+                        container.children[y * 100 + x].style.backgroundColor = "purple"
+                    }
+                    return path
                 }
 
-                await insert(x - 1, y)
-                await insert(x, y - 1)
-                await insert(x + 1, y)
-                await insert(x, y + 1)
+                // 标记将要插入节点的前驱节点，作为路径
+                await insert(x - 1, y, [x,y])
+                await insert(x, y - 1, [x,y])
+                await insert(x + 1, y, [x,y])
+                await insert(x, y + 1, [x,y])
+
+                // 斜着找
+                await insert(x - 1, y - 1, [x,y])
+                await insert(x + 1, y - 1, [x,y])
+                await insert(x - 1, y + 1, [x,y])
+                await insert(x + 1, y + 1, [x,y])
 
             }
-            return false
+            return null
         }
     </script>
 </body>
