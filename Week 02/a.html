@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>启发式寻路</title>
+</head>
+<style>
+    .cell {
+        display: inline-block;
+        line-height: 7px;
+        width: 6px;
+        height: 6px;
+        background-color: gray;
+        border-bottom: 1px solid white;
+        border-right: 1px solid white;
+        vertical-align: top;
+    }
+
+    #container {
+        width: 702px;
+        font-size: 0;
+    }
+
+</style>
+<body>
+    <div id="container"></div>
+    <button onclick="localStorage['map'] = JSON.stringify(map)">save</button>
+    <script> 
+        // 排序数据结构
+        class Sorted {
+            constructor(data, compare) {
+                this.data = data.slice()
+                this.compare = compare || ((a, b) => a - b)
+            }
+            // 取点进行下一步的时候 总是最小的
+            take() {
+                if (!this.data.length) {
+                    return
+                }
+
+                let min = this.data[0]
+                let minIndex = 0
+
+                for(let i = 0; i < this.data.length;i ++) {
+                    if (this.compare(this.data[i], min) < 0) {
+                        min = this.data[i]
+                        minIndex = i
+                    }
+                }
+
+                this.data[minIndex] = this.data[this.data.length - 1] // 将最后一个放到最小的位置上
+                this.data.pop() // 删除最后一个，即实现删除最小元素， 且O（1）
+                return min
+            }
+
+            give(v) {
+                this.data.push(v)
+            }
+        }
+
+        // 地图位置，0可走，1为墙，不可走
+        let map = localStorage["map"] ? JSON.parse(localStorage["map"]) : Array(10000).fill(0)
+        let container = document.getElementById("container")
+
+        for(let y = 0; y < 100; y++) {
+            for(let x = 0; x < 100; x++) {
+                let cell = document.createElement("div")
+
+                cell.classList.add("cell")
+                if (map[100 * y + x] === 1) {
+                    cell.style.backgroundColor = "black"
+                }
+                // 拖动鼠标时生成墙，因为考虑大100*100的地图一个个操作太麻烦
+                cell.addEventListener("mousemove", () => {
+                    if (mousedown) {
+                        if (clear) {
+                            cell.style.backgroundColor = "gray"
+                            map[100 * y + x] = 0
+                        } else {
+                            cell.style.backgroundColor = "black"
+                            map[100 * y + x] = 1
+                        }
+                    }
+                })
+                container.appendChild(cell)
+            }
+        }
+        let mousedown = false
+        let clear = false
+
+        document.addEventListener("mousedown", e => {
+            mousedown = true
+            clear = (e.which === 3)
+            
+            // 左键1，中间键2，右键3
+            // 这里的逻辑是左键的去制造墙，右键清除墙
+        })
+
+        document.addEventListener("mouseup", () => mousedown = false)
+        document.addEventListener("contextmenu", e => e.preventDefault())
+
+        function sleep(time) {
+            return new Promise((resove, reject) => {
+                setTimeout(resove, time)
+            })
+        }
+
+        async function findPath (map, start, end) {
+            let quene = new Sorted([start], (a,b) => distance(a) - distance(b))
+            let table = Object.create(map)
+
+            function distance(point) {
+                return (point[0] - end[0]) ** 2 + (point[1] - end[1]) ** 2
+            }
+
+            async function insert(x, y, pre) {
+                if (x < 0 || x >= 100 || y < 0 || y >= 100) {
+                    return
+                }
+                if (table[100 * y + x]) {
+                    return
+                    // 优化逻辑，找最短路径
+                    // 原因：纪录的pre点是可达点，并不一定是最佳的pre
+                }
+
+                console.log(x,y)
+                container.children[y * 100 + x].style.backgroundColor = "lightgreen"
+                // 标记已经走过的点
+                map[y * 100 + x] = 2
+                // 纪录该点的前一个点的位置，之后找路径用
+                table[y * 100 + x] = pre
+                quene.give([x,y])
+            }
+
+            while(quene.data.length) {
+                // FIFO，取出第一个点
+                let [x, y] = quene.take()
+
+                if (x === end[0] && y === end[1]) {
+                    // 找到点之后返回路径
+                    // 从终点往回找，直到起点为止
+                    let path = []
+
+                    while(x != start[0] || y != start[1]) {
+                        path.push(map[y * 100 + x]);
+                        [x,y] = table[y * 100 + x];
+
+                        container.children[y * 100 + x].style.backgroundColor = "purple"
+                    }
+                    return path
+                }
+
+                // 标记将要插入节点的前驱节点，作为路径
+                await insert(x - 1, y, [x,y])
+                await insert(x, y - 1, [x,y])
+                await insert(x + 1, y, [x,y])
+                await insert(x, y + 1, [x,y])
+
+                // 斜着找
+                await insert(x - 1, y - 1, [x,y])
+                await insert(x + 1, y - 1, [x,y])
+                await insert(x - 1, y + 1, [x,y])
+                await insert(x + 1, y + 1, [x,y])
+
+            }
+            return null
+        }
+    </script>
+</body>
+</html>
