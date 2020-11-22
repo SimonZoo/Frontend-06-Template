@@ -48,4 +48,6 @@ function kmp(source, pattern) {
     }
 }
 
+console.log(kmp("abcabcababcde", "abcdabcabcde"))
+
 
