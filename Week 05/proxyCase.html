@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="color" style="width: 20px;height: 20px;"></div>
+    <input type="range" name="" id="r" min=0 max=255 />
+    <input type="range" name="" id="g" min=0 max=255 />
+    <input type="range" name="" id="b" min=0 max=255 />
+    <script>
+        let callbacks = new Map()
+        let reactiives = new Map()
+        let useReactiives = []
+        let object = {
+            r: 1,
+            g: 1,
+            b: 1
+        }
+        // Object.defineProperties
+        // proxy 基本使用如下，拦截/代理作用
+
+        // let po = new Proxy(object, {
+        //     set(obj, prop, val) {
+        //         console.log("set", obj, prop, val)
+        //     }
+        // })
+
+        // 封装函数，可以复用
+        let po = reactive(object)
+
+        // 监听作用
+        effect(() => {
+            document.getElementById("r").value = po.r
+        })
+        effect(() => {
+            document.getElementById("g").value = po.g
+        })
+        effect(() => {
+            document.getElementById("b").value = po.b
+        })
+
+        document.getElementById("r").addEventListener("input", event => {
+            po.r = event.target.value
+        })
+        document.getElementById("g").addEventListener("input", event => {
+            po.g = event.target.value
+        })
+        document.getElementById("b").addEventListener("input", event => {
+            po.b = event.target.value
+        })
+
+        effect(() => {
+            document.getElementById("color").style.background = `rgb(${po.r}, ${po.g}, ${po.b})`
+        })
+
+        function effect(callback) {
+            useReactiives = []
+            callback()
+            console.log("get,useReactiives.push", useReactiives)
+
+            for(let reactivity of useReactiives) {
+                if (!callbacks.has(reactivity[0])) {
+                    callbacks.set(reactivity[0], new Map())
+                }
+                if (!callbacks.get(reactivity[0]).has(reactivity[1])) {
+                    callbacks.get(reactivity[0]).set(reactivity[1], [])
+                }
+                
+                callbacks.get(reactivity[0]).get(reactivity[1]).push(callback)
+            }
+            
+        }
+
+        function reactive(object) {
+            if (reactiives.has(object))
+                return reactiives.get(object)
+
+            let proxy = new Proxy(object, {
+                set(obj, prop, val) {
+                    obj[prop] = val
+                    console.log("set", obj, prop, val)
+
+                    if (callbacks.get(obj))
+                        if (callbacks.get(obj).get(prop))
+                            for(let callback of callbacks.get(obj).get(prop)) {
+                                callback()
+                            }
+
+                    return obj[prop]
+                },
+                get(obj, prop) {
+                    useReactiives.push([obj, prop])
+                    if (typeof obj[prop] === "object") 
+                        return reactive(obj[prop])
+                    
+                    return obj[prop]
+                }
+            })
+            reactiives.set(object, proxy)
+            return proxy
+
+        }
+        
+    </script>
+</body>
+</html>
