@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    
+</head>
+<body>
+    <div id="container"></div>
+    <script src="https://gw.alipayobjects.com/os/antv/pkg/_antv.g6-3.5.10/dist/g6.min.js"></script>
+    <script>
+        let getRealm = () => {
+            let set = new Set()
+            let map = new Map()
+            let objects = ['eval', 
+                'isFinite', 
+                'isNaN', 
+                'parseFloat', 
+                'parseInt', 
+                'decodeURI',
+                'decodeURIComponent',
+                'encodeURI',
+                'encodeURIComponent',
+                'Array',
+                'Date',
+                'RegExp',
+                'Promise',
+                'Proxy',
+                'Map',
+                'WeakMap',
+                'Set',
+                'WeakSet',
+                'Function',
+                'Boolean',
+                'String',
+                'Number',
+                'Symbol',
+                'Object',
+                'Error',
+                'EvalError',
+                'RangeError',
+                'ReferenceError',
+                'SyntaxError',
+                'TypeError',
+                'URIError',
+                'ArrayBuffer',
+                'SharedArrayBuffer',
+                'DataView',
+                'Float32Array',
+                'Float64Array',
+                'Int8Array',
+                'Int16Array',
+                'Int32Array',
+                'Uint8Array',
+                'Uint16Array',
+                'Uint32Array',
+                'Uint8ClampedArray',
+                'Atomics',
+                'JSON',
+                'Math',
+                'Reflect']
+            
+                objects.forEach(it => {
+                    map.set(it, window[it])
+                })
+
+                let realm = {
+                    id: "realm",
+                    children: objects.map( it => ({
+                        id: it,
+                        children: []
+                    }))
+                }
+                let queue = [...realm.children]
+
+                while (queue.length > 0) {
+                    let child = queue.shift()
+                    let id = child.id
+                    let object = map.get(id)
+
+                    if (set.has(object)) continue
+                    
+                    set.add(object)
+                    console.log(id, object)
+
+                    for(let p of Object.getOwnPropertyNames(object)) {
+                        let d = Object.getOwnPropertyDescriptor(object, p)
+                        let pushChild = (type = "value") => {
+                            let uid = type === "value" ? `${id}.${p}` : `${id}.${p}.${type}`
+                            let o = {
+                                id: uid,
+                                children: []
+                            }
+
+                            map.set(uid, d[type])
+                            child.children.push(o)
+                            queue.push(o)
+                        }
+
+                        if ((d.value !== null && typeof d.value === "object") || typeof d.value === "function") {
+                            pushChild()
+                        }
+                    }
+
+                }
+                return realm
+        }
+
+        let render = (data) => {
+            let container = document.getElementById("container")
+            let width = container.scrollWidth
+            let height = container.scrollHeight || 500
+            let graph = new G6.TreeGraph({
+                container: "container",
+                width,
+                height,
+                modes: {
+                    default: [{
+                        type: "collapse-expand",
+                        onChange: (item, collapsed) => {
+                            let data = item.get("model").date
+                            data.collapsed = collapsed
+                            return true
+                        }
+                    }, "drag-canvas", "zoom-canvas"]
+                },
+                defaultNode: {
+                    size: 26,
+                    anchorPoints: [
+                        [0, 0.5],
+                        [1, 0.5]
+                    ],
+                    style: {
+                        fill: "#c3e5ff",
+                        stroke: "#5b8ff9"
+                    }
+                },
+                defaultEdge: {
+                    type: "cubic-horizontal",
+                    style: {
+                        stroke: "#a3b5bf"
+                    }
+                },
+                layout: {
+                    type: "dendrogram",
+                    direction: "H",
+                    nodeSep: 60,
+                    rankSep: 200
+                }
+            })
+            graph.node(node => ({
+                label: node.id,
+                labelCfg: {
+                    position: node.children && node.children.length > 0 ? "left" : "right",
+                    offset: 50
+                }
+            }))
+
+            graph.data(data)
+            graph.render()
+            graph.fitView()
+        }
+        render(getRealm())
+    </script>
+</body>
+</html>
