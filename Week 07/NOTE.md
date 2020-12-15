@@ -5,13 +5,35 @@
 
 ##### Member 
 
+例如`object.item`，`object[item]`，选取成员，优先级高。
+
+
+
 ##### Reference 类型
 
-##### Expressions
-优先级
+ Reference 是一个 Specification Type，也就是 “只存在于规范里的抽象类型”。它们是为了更好地描述语言的底层行为逻辑才存在的，但并不存在于实际的 js 代码中。
 
-left handside
-right handside
+按规范的描述，Reference 是一个 name binding，由三部分组成：
+
+- base
+- reference name
+- strict mode flag
+
+规范本身的细节这里很难深入，但举简单粗暴的例子来说: a.b 作为 left hand expression 返回的 Reference，base 是 a，reference name 是 "b"。如果 a.b 是个函数，那么调用 a.b() 时会用 a.b 的 base，也就是 a，作为这次调用的 this。
+
+
+
+作者：尤雨溪
+链接：https://www.zhihu.com/question/31911373/answer/53870311
+来源：知乎
+著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+
+
+
+##### Expressions
+主要分为`left handside`和`right handside`。
+
+参考MDN：https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Expressions_and_Operators
 
 
 
